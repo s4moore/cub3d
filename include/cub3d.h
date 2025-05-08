@@ -11,8 +11,32 @@
 # include <mlx.h>
 # include "libft.h"
 
+#ifdef __APPLE__
+    #define MLX_MACOS
+    #include <mlx.h>
+#elif defined(__linux__)
+    #define MLX_LINUX
+    #include <mlx.h>
+#endif
+
 # define WIN_WIDTH 800
 # define WIN_HEIGHT 600
+
+#ifdef MLX_MACOS
+    // macOS keycodes
+    #define KEY_W 13
+    #define KEY_A 0
+    #define KEY_S 1
+    #define KEY_D 2
+    #define KEY_ESC 53
+#else
+    // Linux keycodes
+    #define KEY_W 119
+    #define KEY_A 97
+    #define KEY_S 115
+    #define KEY_D 100
+    #define KEY_ESC 65307
+#endif
 
 # define TEX_NORTH 0
 # define TEX_SOUTH 1

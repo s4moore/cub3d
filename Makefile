@@ -5,22 +5,32 @@ SRC_DIR = src
 OBJ_DIR = obj
 INCL_DIR = include
 LIBFT_DIR = lib/libft
-MLX_DIR = lib/mlx
+MLX_DIR_MACOS = lib/mlx_opengl
+MLX_DIR_LINUX = lib/mlx-linux
+
+# Libraries
+LIBFT = $(LIBFT_DIR)/libft.a
 
 # Sources and objects
-SRCS = $(wildcard $(SRC_DIR)/**/*.c) $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(SRCS:%.c=$(OBJ_DIR)/%.o)
+SRCS = src/parser/main.c src/parser/parse_file.c src/parser/parse_map.c src/parser/parse_elements.c src/utils/exit.c
+OBJS = $(SRCS:src/%.c=$(OBJ_DIR)/%.o)
 
 # Compiler
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -I$(INCL_DIR) -I$(LIBFT_DIR)/include -I$(MLX_DIR)
 
-# Libraries
-LIBFT = $(LIBFT_DIR)/libft.a
-MLX = $(MLX_DIR)/libmlx.a -framework OpenGL -framework AppKit
+# Platform detection
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), Darwin)
+	MLX_DIR = lib/mlx_opengl
+	MLX = $(MLX_DIR)/libmlx.a -framework OpenGL -framework AppKit
+else
+	MLX_DIR = lib/mlx-linux
+	MLX = $(MLX_DIR)/libmlx.a -lXext -lX11 -lm -lz
+endif
 
 # Build object files
-$(OBJ_DIR)/%.o: %.c
+$(OBJ_DIR)/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -28,10 +38,11 @@ $(OBJ_DIR)/%.o: %.c
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(MLX) $(OBJS)
+	@mkdir -p $(OBJ_DIR)/parser $(OBJ_DIR)/utils
 	$(CC) $(CFLAGS) $(OBJS) $(LIBFT) $(MLX) -o $(NAME)
 
 $(LIBFT):
-	make -C $(LIBFT_DIR)
+	make -C $(LIBFT_DIR) re
 
 $(MLX):
 	make -C $(MLX_DIR)
