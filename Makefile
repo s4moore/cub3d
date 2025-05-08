@@ -6,7 +6,7 @@
 #    By: samoore <samoore@student.42london.com>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/08 12:24:04 by samoore           #+#    #+#              #
-#    Updated: 2025/05/08 14:01:08 by samoore          ###   ########.fr        #
+#    Updated: 2025/05/08 20:14:11 by samoore          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,18 +15,18 @@ INC_DIR = includes/
 SRC_DIR = src/
 OBJ_DIR = objects/
 
-SRC_FILES = main.c
+SRC_FILES = main.c mlx_png.c
 OBJ_FILES = $(patsubst %.c, $(OBJ_DIR)%.o, $(SRC_FILES))
 
 CC = gcc
-CC_COMP_FLAGS = -Wall -Werror -Wextra -I$(INC_DIR) -Imlx -g3 -Imlx
+CC_COMP_FLAGS = -w -Wall -Werror -Wextra -I$(INC_DIR) -Imlx -g3
 CC_LINK_FLAGS = -Lmlx -lmlx -L/usr/lib -lXext -lX11 -lm -lz
 NAME = cub3d
 
 all: $(NAME)
 
 $(NAME): $(OBJ_FILES)
-	$(CC) $^ $(CC_LINK_FLAGS) -o $@
+	$(CC) -o $@ $^ $(CC_LINK_FLAGS)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.c
 	mkdir -p $(OBJ_DIR)
