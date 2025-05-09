@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 12:25:08 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/08 18:17:01 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/09 13:06:36 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,16 +32,21 @@ typedef struct t_game
 	int		bpp;
 	int		line_len;
 	int		endian;
-	double	posX;
-	double	posY;
-	double	dirX;
-	double	dirY;
-	double	planeX;
+	double	x_pos;
+	double	y_pos;
+	double	dir_x;
+	double	dir_y;
+	double	plane_x;
 	double	planeY;
 	double	time;
-	double	oldTime;
-	double	moveSpeed;
-	double	rotSpeed;
+	double	old_time;
+	double	move_speed;
+	double	rot_speed;
+	double	camera_x;
+	double	ray_dir_x;
+	double	ray_dir_y;
+	int		map_x;
+	int		map_y;
 	int keys[65536];
 }	t_game;
 

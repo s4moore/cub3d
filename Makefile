@@ -6,7 +6,7 @@
 #    By: samoore <samoore@student.42london.com>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/08 12:24:04 by samoore           #+#    #+#              #
-#    Updated: 2025/05/08 20:14:11 by samoore          ###   ########.fr        #
+#    Updated: 2025/05/09 11:19:28 by samoore          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,7 @@ INC_DIR = includes/
 SRC_DIR = src/
 OBJ_DIR = objects/
 
-SRC_FILES = main.c mlx_png.c
+SRC_FILES = main.c
 OBJ_FILES = $(patsubst %.c, $(OBJ_DIR)%.o, $(SRC_FILES))
 
 CC = gcc
