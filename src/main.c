@@ -14,7 +14,8 @@ int	main(int argc, char **argv)
 		ft_putendl_fd("Failed to parse .cub file", 2);
 		return (1);
 	}
-	// MLX initialization, rendering, and game loop will be here
+    // MLX initialization, rendering, and game loop will be here
 	ft_putendl_fd("Map parsed successfully!", 1);
-	return (0);
+    free_game(&game);
+    return (0);
 }

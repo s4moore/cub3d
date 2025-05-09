@@ -12,7 +12,7 @@ MLX_DIR_LINUX = lib/mlx-linux
 LIBFT = $(LIBFT_DIR)/libft.a
 
 # Sources and objects
-SRCS = src/parser/main.c src/parser/parse_file.c src/parser/parse_map.c src/parser/parse_elements.c src/utils/exit.c
+SRCS = src/main.c src/parser/parse_file.c src/parser/map_validation_2.c src/parser/parse_elements.c src/parser/process_map.c src/parser/map_validation.c src/utils/exit.c
 OBJS = $(SRCS:src/%.c=$(OBJ_DIR)/%.o)
 
 # Compiler
