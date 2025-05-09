@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 12:25:08 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/09 13:06:36 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/09 17:46:58 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,37 +17,110 @@
 # include <math.h>
 # include <stdlib.h>
 # include <X11/keysym.h> //keysym
+# include <sys/time.h>
 
 # define SCREEN_WIDTH 640
 # define SCREEN_HEIGHT 480
 # define TEX_WIDTH 64
 # define TEX_HEIGHT 64
 
+#define SCREEN_W 1400
+#define SCREEN_H 960
+#define TEXTURE_SIZE 1024
+#define MAP_W 24
+#define MAP_H 24
+
+typedef unsigned int Uint32;
+Uint32	buffer[SCREEN_H][SCREEN_W];
+Uint32*	texture[5];
+
+int	g_world_map[MAP_W][MAP_H] = \
+{
+{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7, 7, 7, 7, 7, 7, 7, 7},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7},
+{4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7},
+{4, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7},
+{4, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7},
+{4, 0, 4, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 0, 7, 7, 7, 7, 7},
+{4, 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 5, 0, 5, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1},
+{4, 0, 6, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 4},
+{4, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 1},
+{4, 0, 4, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 4},
+{4, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0, 7, 7, 7, 1},
+{4, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 1},
+{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4},
+{6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6},
+{4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 6, 0, 6, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 2, 0, 0, 5, 0, 0, 2, 0, 0, 0, 2},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2},
+{4, 0, 6, 0, 6, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 2},
+{4, 0, 0, 5, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2},
+{4, 0, 6, 0, 6, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 5, 0, 0, 2, 0, 0, 0, 2},
+{4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2},
+{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3}
+};
+
+
+
+typedef struct s_xy_dbl
+{
+	double	x;
+	double	y;
+}	t_xy_dbl;
+
+typedef struct s_xy_int
+{
+	int	x;
+	int	y;
+}	t_xy_int;
+
+typedef struct s_draw_props
+{
+	t_xy_dbl	ray_dir;
+	t_xy_dbl	delta;
+	t_xy_dbl	ray_dist;
+	t_xy_int	step;
+	t_xy_int	tex;
+	t_xy_dbl	floor_start;
+	double		wall_x;
+	double		wall_dist;
+	int			side;
+	int			tex_num;
+	int			line_height;
+	int			draw_start;
+	int			draw_end;
+	double		tex_step;
+	double		tex_offset;
+	double		col;
+}	t_draw_props;
+
 typedef struct t_game
 {
-	void	*mlx;
-	void	*win;
-	void	*img;
-	char	*addr;
-	int		bpp;
-	int		line_len;
-	int		endian;
-	double	x_pos;
-	double	y_pos;
-	double	dir_x;
-	double	dir_y;
-	double	plane_x;
-	double	planeY;
-	double	time;
-	double	old_time;
-	double	move_speed;
-	double	rot_speed;
-	double	camera_x;
-	double	ray_dir_x;
-	double	ray_dir_y;
-	int		map_x;
-	int		map_y;
-	int keys[65536];
+	t_draw_props* 	props;
+	t_xy_dbl		player;
+	t_xy_dbl		dir;
+	void			*mlx;
+	void			*win;
+	void			*img;
+	char			*addr;
+	int				bpp;
+	int				line_len;
+	int				endian;
+	double			plane_x;
+	double			plane_y;
+	double			time;
+	double			old_time;
+	double			move_speed;
+	double			rot_speed;
+	int				map_x;
+	int				map_y;
+	int 			keys[65536];
 }	t_game;
 
+typedef struct s_ray_details
+{
+	
+};
 #endif
