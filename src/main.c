@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/04 12:14:01 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/10 16:15:41 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/10 18:57:08 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,11 @@ void	create_stars(t_game *game)
 	double	theta;
 	int		i;
 	double	phi;
+	int		w;
+	int		h;
 
+	h = 0;
+	w = 0;
 	game->stars = malloc(sizeof(t_star) * NUM_STARS);
 	if (!game->stars)
 		return ;
@@ -46,6 +50,7 @@ void	create_stars(t_game *game)
 		game->stars[i].y = 100 * cos(phi);
 		game->stars[i].z = 100 * sin(phi) * sin(theta);
 		game->stars[i].size = rand() % 3;
+			game->stars[i].is_planet = 0;
 		set_star_colour(game, i);
 	}
 }
@@ -57,8 +62,8 @@ t_game	*init(void)
 
 	game = malloc(sizeof(t_game));
 	game->stars = malloc(sizeof(t_star) * NUM_STARS);
-	create_stars(game);
 	game->mlx = mlx_init();
+	create_stars(game);
 	game->win = mlx_new_window(game->mlx, SCREEN_W, SCREEN_H, "cub3d");
 	game->img = mlx_new_image(game->mlx, SCREEN_W, SCREEN_H);
 	game->addr = mlx_get_data_addr(
@@ -142,11 +147,11 @@ void	load_textures(t_game *game)
 	i = -1;
 	while (++i < 5)
 		texture[i] = malloc(sizeof(Uint32) * TEXTURE_SIZE * TEXTURE_SIZE);
-	texture[0] = mlx_xpm_file_to_image(game->mlx, "pics/rusty1.xpm", &i, &j);
-	texture[1] = mlx_xpm_file_to_image(game->mlx, "pics/stone2.xpm", &i, &j);
-	texture[2] = mlx_xpm_file_to_image(game->mlx, "pics/rmetal.xpm", &i, &j);
-	texture[3] = mlx_xpm_file_to_image(game->mlx, "pics/rmetal.xpm", &i, &j);
-	texture[4] = mlx_xpm_file_to_image(game->mlx, "pics/rock1.xpm", &i, &j);
+	texture[0] = mlx_xpm_file_to_image(game->mlx, "pics/slate.xpm", &i, &j);
+	texture[1] = mlx_xpm_file_to_image(game->mlx, "pics/rusty1.xpm", &i, &j);
+	texture[2] = mlx_xpm_file_to_image(game->mlx, "pics/rock1.xpm", &i, &j);
+	texture[3] = mlx_xpm_file_to_image(game->mlx, "pics/stone2.xpm", &i, &j);
+	texture[4] = mlx_xpm_file_to_image(game->mlx, "pics/concrete.xpm", &i, &j);
 	i = -1;
 	while (++i < 5)
 		texture[i] = mlx_get_data_addr(texture[i], &line_len, &bpp, &endian);
@@ -312,8 +317,8 @@ void	draw_walls(t_game *game, int x)
 		props->tex_offset += props->tex_step;
 		color = texture[props->tex_num][TEXTURE_SIZE
 			* props->tex.y + props->tex.x];
-		if (props->side == 1)
-			color = (color >> 1) & 4355711;
+		// if (props->side == 1)
+		color = (color >> 1) & 4355711;
 		put_pixel(game, x, y, color);
 	}
 }
@@ -385,6 +390,11 @@ void	draw_star(t_game *game, t_star s, int color)
 
 	y = 0;
 	err = 0;
+	if (s.is_planet)
+	{
+		put_image(game, s);
+		return;
+	}
 	while (s.size >= y)
 	{
 		put_pixel(game, s.screen_x + s.size, s.screen_y + y, color);
@@ -406,6 +416,17 @@ void	draw_star(t_game *game, t_star s, int color)
 	}
 }
 
+void	put_image(t_game *game, t_star s)
+{
+	Uint32	*addr;
+	int		bpp, ll, end;
+
+	addr = mlx_get_data_addr(s.image, &bpp, &ll, &end);
+	for (int i = 0; i < ll; i++)
+		for (int j = 0; j < ll; j++)
+			put_pixel(game, s.x + j, s.y + i, addr[((int)s.y + i) * ll + (int)s.x + j]);
+}
+
 void	draw_stars(t_game *game)
 {
 	t_star	s;
@@ -420,6 +441,7 @@ void	draw_stars(t_game *game)
 			continue ;
 		s.screen_x = (s.x / s.y) * (SCREEN_W / 2) + (SCREEN_W / 2);
 		s.screen_y = (s.z / s.y) * (SCREEN_H / 2) + (SCREEN_H / 2);
+
 		if (s.screen_x >= 0 && s.screen_x < SCREEN_W
 			&& s.screen_y >= 0 && s.screen_y < SCREEN_H / 2)
 		{

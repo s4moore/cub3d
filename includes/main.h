@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 12:25:08 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/10 16:12:45 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/10 16:47:21 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@
 #define SCREEN_H 1080
 #define TEXTURE_SIZE 1024
 #define NUM_STARS 20000
-#define STAR_SPHERE_RADIUS 100000.0
+#define STAR_SPHERE_RADIUS 10.0
 #define MAP_W 24
 #define MAP_H 24
 #define LEFT 1
@@ -31,6 +31,10 @@
 #ifndef M_PI
 # define M_PI 3.14159265358979323846
 #endif
+
+typedef unsigned int Uint32;
+Uint32	buffer[SCREEN_H][SCREEN_W];
+Uint32*	texture[5];
 
 typedef struct s_vec3 {
     double x;
@@ -49,11 +53,11 @@ typedef struct s_star {
 	int		twinkle;
 	int		timer;
 	int		twinkle_color;
+	int		is_planet;
+	Uint32*	image;
 } t_star;
 
-typedef unsigned int Uint32;
-Uint32	buffer[SCREEN_H][SCREEN_W];
-Uint32*	texture[5];
+
 
 int	g_world_map[MAP_W][MAP_H] = \
 {
