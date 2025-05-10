@@ -6,11 +6,49 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/04 12:14:01 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/09 18:09:51 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/10 16:15:41 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "main.h"
+
+void	set_star_colour(t_game *game, int i)
+{
+	int	r;
+	int	g;
+	int	b;
+
+	g = rand() % 36 + 220;
+	b = rand() % 36 + 220;
+	r = rand() % 36 + 220;
+	game->stars[i].color = (r << 16) | (g << 8) | b;
+	game->stars[i].twinkle_color
+		= ((int)(r / 1.5) << 16) | ((int)(g / 1.5) << 8) | b;
+	game->stars[i].twinkle = ((rand() % 100) + 5) * 20;
+	game->stars[i].timer = 0;
+}
+
+void	create_stars(t_game *game)
+{
+	double	theta;
+	int		i;
+	double	phi;
+
+	game->stars = malloc(sizeof(t_star) * NUM_STARS);
+	if (!game->stars)
+		return ;
+	i = -1;
+	while (++i < NUM_STARS)
+	{
+		theta = ((double)rand() / RAND_MAX) * 2.0 * M_PI;
+		phi = acos(2.0 * ((double)rand() / RAND_MAX) - 1.0);
+		game->stars[i].x = 100 * sin(phi) * cos(theta);
+		game->stars[i].y = 100 * cos(phi);
+		game->stars[i].z = 100 * sin(phi) * sin(theta);
+		game->stars[i].size = rand() % 3;
+		set_star_colour(game, i);
+	}
+}
 
 t_game	*init(void)
 {
@@ -18,6 +56,8 @@ t_game	*init(void)
 	int		i;
 
 	game = malloc(sizeof(t_game));
+	game->stars = malloc(sizeof(t_star) * NUM_STARS);
+	create_stars(game);
 	game->mlx = mlx_init();
 	game->win = mlx_new_window(game->mlx, SCREEN_W, SCREEN_H, "cub3d");
 	game->img = mlx_new_image(game->mlx, SCREEN_W, SCREEN_H);
@@ -52,6 +92,8 @@ void	put_pixel(t_game *game, int x, int y, int color)
 {
 	char	*dst;
 
+	if (x < 0 || x >= SCREEN_W || y < 0 || y >= SCREEN_H)
+		return ;
 	dst = game->addr + (y * game->line_len + x * (game->bpp / 8));
 	*(unsigned int *) dst = color;
 }
@@ -116,8 +158,8 @@ void	ray_caster_init(t_game *game)
 	game->player.y = 22.0;
 	game->dir.x = -1;
 	game->dir.y = 0;
-	game->plane_x = 0.0;
-	game->plane_y = 0.66;
+	game->plane_x = 0;
+	game->plane_y = 0.6;
 	game->time = 0;
 	game->old_time = 0;
 	set_view_direction(game, 'N');
@@ -333,7 +375,67 @@ void	update_speed(t_game *game)
 	game->time = get_ticks();
 	frame_time = (game->time - game->old_time) / 1000.0;
 	game->move_speed = frame_time * 5.0;
-	game->rot_speed = frame_time * 3.0;
+	game->rot_speed = frame_time * 2.5;
+}
+
+void	draw_star(t_game *game, t_star s, int color)
+{
+	int	y;
+	int	err;
+
+	y = 0;
+	err = 0;
+	while (s.size >= y)
+	{
+		put_pixel(game, s.screen_x + s.size, s.screen_y + y, color);
+		put_pixel(game, s.screen_x + y, s.screen_y + s.size, color);
+		put_pixel(game, s.screen_x - y, s.screen_y + s.size, color);
+		put_pixel(game, s.screen_x - s.size, s.screen_y + y, color);
+		put_pixel(game, s.screen_x - s.size, s.screen_y - y, color);
+		put_pixel(game, s.screen_x - y, s.screen_y - s.size, color);
+		put_pixel(game, s.screen_x + y, s.screen_y - s.size, color);
+		put_pixel(game, s.screen_x + s.size, s.screen_y - y, color);
+		y += 1;
+		if (err <= 0)
+			err += 2 * y + 1;
+		if (err > 0)
+		{
+			s.size -= 1;
+			err -= 2 * s.size + 1;
+		}
+	}
+}
+
+void	draw_stars(t_game *game)
+{
+	t_star	s;
+	int		i;
+
+	i = -1;
+	while (++i < NUM_STARS)
+	{
+		s = game->stars[i];
+		game->stars[i].timer++;
+		if (s.z <= 1)
+			continue ;
+		s.screen_x = (s.x / s.y) * (SCREEN_W / 2) + (SCREEN_W / 2);
+		s.screen_y = (s.z / s.y) * (SCREEN_H / 2) + (SCREEN_H / 2);
+		if (s.screen_x >= 0 && s.screen_x < SCREEN_W
+			&& s.screen_y >= 0 && s.screen_y < SCREEN_H / 2)
+		{
+			if (s.timer > 1)
+				draw_star(game, s, (int)s.color);
+			else
+				draw_star(game, s, (int)s.twinkle_color);
+			if (s.timer >= s.twinkle)
+				game->stars[i].timer = 0;
+		}
+	}
+}
+
+double	get_player_rotation_angle(t_game *game)
+{
+	return (atan2(game->dir.y, game->dir.x));
 }
 
 int	draw(t_game *game)
@@ -341,6 +443,7 @@ int	draw(t_game *game)
 	int	x;
 
 	x = -1;
+	draw_stars(game);
 	while (++x < SCREEN_W)
 	{
 		calculate_initial_props(game, x);
@@ -396,6 +499,26 @@ void	check_up_down_arrows(t_game *game)
 	}
 }
 
+void	rotate_stars(t_game *game, t_star *stars, int direction)
+{
+	double	cos_rot;
+	double	sin_rot;
+	double	old_x;
+	double	old_y;
+	int		i;
+
+	cos_rot = cos(direction * game->rot_speed * 0.5);
+	sin_rot = sin(direction * game->rot_speed * 0.5);
+	i = -1;
+	while (++i < NUM_STARS)
+	{
+		old_x = stars[i].x;
+		old_y = stars[i].y;
+		stars[i].x = old_x * cos_rot - old_y * sin_rot;
+		stars[i].y = old_x * sin_rot + old_y * cos_rot;
+	}
+}
+
 void	check_left_arrow(t_game *game)
 {
 	double	old_dir_x;
@@ -413,6 +536,7 @@ void	check_left_arrow(t_game *game)
 			- game->plane_y * sin(-game->rot_speed);
 		game->plane_y = old_plane_x * sin(-game->rot_speed)
 			+ game->plane_y * cos(-game->rot_speed);
+		rotate_stars(game, game->stars, LEFT);
 	}
 }
 
@@ -433,6 +557,7 @@ void	check_right_arrow(t_game *game)
 			- game->plane_y * sin(game->rot_speed);
 		game->plane_y = old_plane_x * sin(game->rot_speed)
 			+ game->plane_y * cos(game->rot_speed);
+		rotate_stars(game, game->stars, RIGHT);
 	}
 }
 

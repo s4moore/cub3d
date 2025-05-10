@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 12:25:08 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/09 17:46:58 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/10 16:12:45 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,16 +19,37 @@
 # include <X11/keysym.h> //keysym
 # include <sys/time.h>
 
-# define SCREEN_WIDTH 640
-# define SCREEN_HEIGHT 480
-# define TEX_WIDTH 64
-# define TEX_HEIGHT 64
-
-#define SCREEN_W 1400
-#define SCREEN_H 960
+#define SCREEN_W 1800
+#define SCREEN_H 1080
 #define TEXTURE_SIZE 1024
+#define NUM_STARS 20000
+#define STAR_SPHERE_RADIUS 100000.0
 #define MAP_W 24
 #define MAP_H 24
+#define LEFT 1
+#define RIGHT -1
+#ifndef M_PI
+# define M_PI 3.14159265358979323846
+#endif
+
+typedef struct s_vec3 {
+    double x;
+    double y;
+    double z;
+} t_vec3;
+
+typedef struct s_star {
+    double	x;
+    double	y;
+    double	z;
+    double	size;
+	double	screen_x;
+	double	screen_y;
+    int		color;
+	int		twinkle;
+	int		timer;
+	int		twinkle_color;
+} t_star;
 
 typedef unsigned int Uint32;
 Uint32	buffer[SCREEN_H][SCREEN_W];
@@ -96,11 +117,19 @@ typedef struct s_draw_props
 	double		col;
 }	t_draw_props;
 
+// typedef struct s_star{
+// 	double	x;
+// 	double	y;
+// 	double	z;
+// }	t_star;
+
 typedef struct t_game
 {
-	t_draw_props* 	props;
+	t_draw_props	*props;
+	t_star			*stars;
 	t_xy_dbl		player;
-	t_xy_dbl		dir;
+	// t_xy_dbl		dir;
+	t_vec3			dir;
 	void			*mlx;
 	void			*win;
 	void			*img;
@@ -114,13 +143,11 @@ typedef struct t_game
 	double			old_time;
 	double			move_speed;
 	double			rot_speed;
+	double			yaw;
+	double			pitch;
 	int				map_x;
 	int				map_y;
 	int 			keys[65536];
 }	t_game;
 
-typedef struct s_ray_details
-{
-	
-};
 #endif
