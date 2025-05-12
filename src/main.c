@@ -6,7 +6,7 @@
 /*   By: samoore <samoore@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/04 12:14:01 by samoore           #+#    #+#             */
-/*   Updated: 2025/05/10 18:57:08 by samoore          ###   ########.fr       */
+/*   Updated: 2025/05/12 17:22:27 by samoore          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,13 @@ void	set_star_colour(t_game *game, int i)
 	int	g;
 	int	b;
 
-	g = rand() % 36 + 220;
-	b = rand() % 36 + 220;
-	r = rand() % 36 + 220;
+	g = rand() % 36 + 140;
+	b = rand() % 36 + 140;
+	r = rand() % 36 + 140;
 	game->stars[i].color = (r << 16) | (g << 8) | b;
 	game->stars[i].twinkle_color
 		= ((int)(r / 1.5) << 16) | ((int)(g / 1.5) << 8) | b;
-	game->stars[i].twinkle = ((rand() % 100) + 5) * 20;
+	game->stars[i].twinkle = ((rand() % 1000) + 5) * 10;
 	game->stars[i].timer = 0;
 }
 
@@ -50,9 +50,55 @@ void	create_stars(t_game *game)
 		game->stars[i].y = 100 * cos(phi);
 		game->stars[i].z = 100 * sin(phi) * sin(theta);
 		game->stars[i].size = rand() % 3;
-			game->stars[i].is_planet = 0;
 		set_star_colour(game, i);
 	}
+}
+
+void	put_planet_in_3d(t_game *game)
+{
+	double	theta;
+	double	height;
+	int		i;
+
+	i = -1;
+	while (++i < NUM_PLANETS)
+	{
+		theta = ((double)rand() / RAND_MAX) * 2.0 * M_PI;
+		height = ((double)rand() / RAND_MAX) * SCREEN_H - SCREEN_H / 2.0;
+		game->planets[i].orbit_radius = SCREEN_W;
+		game->planets[i].orbit_height = height;
+		game->planets[i].orbit_angle = theta;
+		game->planets[i].pos.x = SCREEN_W * cos(theta);
+		game->planets[i].pos.z = SCREEN_W * sin(theta);
+		game->planets[i].pos.y = height;
+	}
+}
+
+void	load_planets(t_game *game)
+{
+	int	i;
+	int	j;
+	int	bpp;
+	int	line_len;
+	int	endian;
+
+	i = -1;
+	while (++i < 1)
+		game->planets[i].img = malloc(
+				sizeof(Uint32) * TEXTURE_SIZE * TEXTURE_SIZE);
+	game->planets[0].img = mlx_xpm_file_to_image(
+			game->mlx, "pics/mars.xpm",
+			&game->planets[i].w, &game->planets[i].h);
+	i = -1;
+	while (++i < 1)
+		game->planets[i].img = mlx_get_data_addr(
+				game->planets[i].img, &line_len, &bpp, &endian);
+	game->planets[0].w = 800;
+	game->planets[0].h = 800;
+	game->planets[0].pos.x = 1;
+	game->planets[0].pos.y = 15;
+	game->planets[0].pos.z = 100;
+	put_planet_in_3d(game);
 }
 
 t_game	*init(void)
@@ -64,6 +110,7 @@ t_game	*init(void)
 	game->stars = malloc(sizeof(t_star) * NUM_STARS);
 	game->mlx = mlx_init();
 	create_stars(game);
+	load_planets(game);
 	game->win = mlx_new_window(game->mlx, SCREEN_W, SCREEN_H, "cub3d");
 	game->img = mlx_new_image(game->mlx, SCREEN_W, SCREEN_H);
 	game->addr = mlx_get_data_addr(
@@ -150,8 +197,8 @@ void	load_textures(t_game *game)
 	texture[0] = mlx_xpm_file_to_image(game->mlx, "pics/slate.xpm", &i, &j);
 	texture[1] = mlx_xpm_file_to_image(game->mlx, "pics/rusty1.xpm", &i, &j);
 	texture[2] = mlx_xpm_file_to_image(game->mlx, "pics/rock1.xpm", &i, &j);
-	texture[3] = mlx_xpm_file_to_image(game->mlx, "pics/stone2.xpm", &i, &j);
-	texture[4] = mlx_xpm_file_to_image(game->mlx, "pics/concrete.xpm", &i, &j);
+	texture[3] = mlx_xpm_file_to_image(game->mlx, "pics/cobble.xpm", &i, &j);
+	texture[4] = mlx_xpm_file_to_image(game->mlx, "pics/rubber.xpm", &i, &j);
 	i = -1;
 	while (++i < 5)
 		texture[i] = mlx_get_data_addr(texture[i], &line_len, &bpp, &endian);
@@ -317,7 +364,6 @@ void	draw_walls(t_game *game, int x)
 		props->tex_offset += props->tex_step;
 		color = texture[props->tex_num][TEXTURE_SIZE
 			* props->tex.y + props->tex.x];
-		// if (props->side == 1)
 		color = (color >> 1) & 4355711;
 		put_pixel(game, x, y, color);
 	}
@@ -390,11 +436,6 @@ void	draw_star(t_game *game, t_star s, int color)
 
 	y = 0;
 	err = 0;
-	if (s.is_planet)
-	{
-		put_image(game, s);
-		return;
-	}
 	while (s.size >= y)
 	{
 		put_pixel(game, s.screen_x + s.size, s.screen_y + y, color);
@@ -416,15 +457,33 @@ void	draw_star(t_game *game, t_star s, int color)
 	}
 }
 
-void	put_image(t_game *game, t_star s)
+void	put_image(t_game *game)
 {
-	Uint32	*addr;
-	int		bpp, ll, end;
+	t_xy_int	pos;
+	int			clear;
+	int			size;
+	int			i;
+	int			j;
 
-	addr = mlx_get_data_addr(s.image, &bpp, &ll, &end);
-	for (int i = 0; i < ll; i++)
-		for (int j = 0; j < ll; j++)
-			put_pixel(game, s.x + j, s.y + i, addr[((int)s.y + i) * ll + (int)s.x + j]);
+	clear = game->planets[0].img[0];
+	if (game->planets[0].pos.z < 0)
+		return ;
+	size = 2;
+	i = 0;
+	while (i < game->planets[0].h)
+	{
+		j = 0;
+		while (j < game->planets[0].w)
+		{
+			if (game->planets[0].img[i * game->planets[0].w + j] != clear)
+				put_pixel(game,
+					SCREEN_W / 2 + game->planets[0].pos.x + j / size,
+					100 + i / size,
+					game->planets[0].img[i * game->planets[0].w + j]);
+			j += size;
+		}
+		i += size;
+	}
 }
 
 void	draw_stars(t_game *game)
@@ -441,14 +500,13 @@ void	draw_stars(t_game *game)
 			continue ;
 		s.screen_x = (s.x / s.y) * (SCREEN_W / 2) + (SCREEN_W / 2);
 		s.screen_y = (s.z / s.y) * (SCREEN_H / 2) + (SCREEN_H / 2);
-
 		if (s.screen_x >= 0 && s.screen_x < SCREEN_W
 			&& s.screen_y >= 0 && s.screen_y < SCREEN_H / 2)
 		{
 			if (s.timer > 1)
 				draw_star(game, s, (int)s.color);
 			else
-				draw_star(game, s, (int)s.twinkle_color);
+				draw_star(game, s, 0xffffffff);
 			if (s.timer >= s.twinkle)
 				game->stars[i].timer = 0;
 		}
@@ -466,6 +524,7 @@ int	draw(t_game *game)
 
 	x = -1;
 	draw_stars(game);
+	put_image(game);
 	while (++x < SCREEN_W)
 	{
 		calculate_initial_props(game, x);
@@ -501,7 +560,7 @@ int	key_release(int keycode, t_game *game)
 
 void	check_up_down_arrows(t_game *game)
 {
-	if (game->keys[XK_Up])
+	if (game->keys[XK_Up] || game->keys[XK_w])
 	{
 		if (g_world_map[(int)(game->player.x + game->dir.x
 				* game->move_speed)][(int)game->player.y] == 0)
@@ -510,7 +569,7 @@ void	check_up_down_arrows(t_game *game)
 			+ game->dir.y * game->move_speed)] == 0)
 			game->player.y += game->dir.y * game->move_speed;
 	}
-	if (game->keys[XK_Down])
+	if (game->keys[XK_Down] || game->keys[XK_s])
 	{
 		if (g_world_map[(int)(game->player.x - game->dir.x
 				* game->move_speed)][(int)game->player.y] == 0)
@@ -518,6 +577,35 @@ void	check_up_down_arrows(t_game *game)
 		if (g_world_map[(int)game->player.x][(int)(game->player.y
 			- game->dir.y * game->move_speed)] == 0)
 			game->player.y -= game->dir.y * game->move_speed;
+	}
+}
+
+void	check_strafe(t_game *game)
+{
+	double	x;
+	double	y;
+
+	if (game->keys[XK_d])
+	{
+		x = game->dir.y;
+		y = -game->dir.x;
+		if (g_world_map[(int)(game->player.x + x * game->move_speed)]
+				[(int)game->player.y] == 0)
+			game->player.x += x * game->move_speed;
+		if (g_world_map[(int)game->player.x][(int)(game->player.y + y
+			* game->move_speed)] == 0)
+			game->player.y += y * game->move_speed;
+	}
+	if (game->keys[XK_a])
+	{
+		x = -game->dir.y;
+		y = game->dir.x;
+		if (g_world_map[(int)(game->player.x + x * game->move_speed)]
+				[(int)game->player.y] == 0)
+			game->player.x += x * game->move_speed;
+		if (g_world_map[(int)game->player.x][(int)(game->player.y + y
+			* game->move_speed)] == 0)
+			game->player.y += y * game->move_speed;
 	}
 }
 
@@ -541,33 +629,25 @@ void	rotate_stars(t_game *game, t_star *stars, int direction)
 	}
 }
 
+void	rotate_planets(t_game *game, int direction)
+{
+	double	a;
+	double	r;
+
+	game->planets[0].orbit_angle += game->rot_speed * direction;
+	a = game->planets[0].orbit_angle;
+	r = game->planets[0].orbit_radius;
+	game->planets[0].pos.x = r * cos(a);
+	game->planets[0].pos.z = r * sin(a);
+	game->planets[0].pos.y = game->planets[0].orbit_height;
+}
+
 void	check_left_arrow(t_game *game)
 {
 	double	old_dir_x;
 	double	old_plane_x;
 
-	if (game->keys[65363])
-	{
-		old_dir_x = game->dir.x;
-		game->dir.x = game->dir.x * cos(-game->rot_speed)
-			- game->dir.y * sin(-game->rot_speed);
-		game->dir.y = old_dir_x * sin(-game->rot_speed)
-			+ game->dir.y * cos(-game->rot_speed);
-		old_plane_x = game->plane_x;
-		game->plane_x = game->plane_x * cos(-game->rot_speed)
-			- game->plane_y * sin(-game->rot_speed);
-		game->plane_y = old_plane_x * sin(-game->rot_speed)
-			+ game->plane_y * cos(-game->rot_speed);
-		rotate_stars(game, game->stars, LEFT);
-	}
-}
-
-void	check_right_arrow(t_game *game)
-{
-	double	old_dir_x;
-	double	old_plane_x;
-
-	if (game->keys[65361])
+	if (game->keys[0xff51])
 	{
 		old_dir_x = game->dir.x;
 		game->dir.x = game->dir.x * cos(game->rot_speed)
@@ -579,7 +659,32 @@ void	check_right_arrow(t_game *game)
 			- game->plane_y * sin(game->rot_speed);
 		game->plane_y = old_plane_x * sin(game->rot_speed)
 			+ game->plane_y * cos(game->rot_speed);
+		rotate_stars(game, game->stars, LEFT);
+		game->planet_angle += game->rot_speed;
+		rotate_planets(game, LEFT);
+	}
+}
+
+void	check_right_arrow(t_game *game)
+{
+	double	old_dir_x;
+	double	old_plane_x;
+
+	if (game->keys[0xff53])
+	{
+		old_dir_x = game->dir.x;
+		game->dir.x = game->dir.x * cos(-game->rot_speed)
+			- game->dir.y * sin(-game->rot_speed);
+		game->dir.y = old_dir_x * sin(-game->rot_speed)
+			+ game->dir.y * cos(-game->rot_speed);
+		old_plane_x = game->plane_x;
+		game->plane_x = game->plane_x * cos(-game->rot_speed)
+			- game->plane_y * sin(-game->rot_speed);
+		game->plane_y = old_plane_x * sin(-game->rot_speed)
+			+ game->plane_y * cos(-game->rot_speed);
 		rotate_stars(game, game->stars, RIGHT);
+		game->planet_angle -= game->rot_speed;
+		rotate_planets(game, RIGHT);
 	}
 }
 
